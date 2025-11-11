@@ -25,17 +25,12 @@ class Matching:
         Process the new order 
         """
         if new_order['Side'] == 'Buy':
-            # scan for sell orders if the new order side is Buy
-            highest_price = self.order_book.loc[self.order_book['Price'].idxmax()]
-            if highest_price.shape[0] != 0: 
-                # if multiple orders have the same price, the one with an earlier time is prioritised
-                highest_price = highest_price.loc[highest_price['CreateTime'].idxmin()] 
+            # Sort by lowest price if the new order is Buy side
+            buy_sorted = self.order_book.sort_values(by = ['Price', 'CreateTime'], ascending=[False, True])
+        
         else:
-            # Scan for buy orders if the new order side is Sell
-            lowest_price = self.order_book.loc[self.order_book['Price'].idxmin()]
-            if lowest_price.shape[0] != 0: 
-                # if multiple orders have the same price, the one with an earlier time is prioritised
-                lowest_price = lowest_price.loc[lowest_price['CreateTime'].idxmin()] 
+            # Sort by lowest price if the new order is Sell side
+            sell_sorted = self.order_book.sort_values(by = ['Price', 'CreateTime'], ascending=[True, True])
 
         self.order_book.insert(new_order)
         
