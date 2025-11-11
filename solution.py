@@ -5,8 +5,10 @@ class Matching:
         """
         Construct an empty list of executions and orders 
         """
-        self.execution = pd.DataFrame(columns = ['Execution ID', 'Price', 'Quantity', 'Sell-OrderID', 'Buy-OrderID'])
-        self.order_book = pd.DataFrame(columns = ["OrderID", "CreateTime", "Side", "Price", "Quantity"])
+        self.executions = pd.DataFrame(columns = ['Execution ID', 'Price', 'Quantity', 'Sell-OrderID', 'Buy-OrderID'])
+        self.buy_order_book = pd.DataFrame(columns = ["OrderID", "CreateTime", "Price", "Quantity"])
+        self.sell_order_book = pd.DataFrame(columns = ["OrderID", "CreateTime", "Price", "Quantity"])
+        self.executionID = 0
 
     def new(self, OrderID, CreateTime, Side, Price, Quantity):
         """
@@ -15,8 +17,12 @@ class Matching:
         new_order = pd.Series(OrderID, CreateTime, Side, Price, Quantity)
         self.processing(new_order)
 
-    def execution(self):
-        return 
+    def execution(self, Price, Quantity, SOrderID, BOrderID):
+        """
+        Create an execution for the new order
+        """
+        self.executions.insert(self.executionID, Price, Quantity, SOrderID, BOrderID)
+        self.executionID += 1 
 
 
     def _processing(self, new_order):
@@ -26,12 +32,31 @@ class Matching:
         """
         if new_order['Side'] == 'Buy':
             # Sort by lowest price if the new order is Buy side
-            buy_sorted = self.order_book.sort_values(by = ['Price', 'CreateTime'], ascending=[False, True])
-        
+            if self.sell_order_book.empty: # no more orders to cross against
+                self.sell_order_book.insert(new_order)
+
+            sell_sorted = self.sell_order_book.sort_values(by = ['Price', 'CreateTime'], ascending=[False, True])
+            priority_order = sell_sorted.loc[0]
+
+            if priority_order['Quantity'] < new_order['Quantity']:
+                self.execution(priority_order['Price', 'Quantity', 'OrderID'], new_order['OrderID'])
+            else:
+                self.execution(new_order['Price', 'Quantity', 'OrderID'], priority_order['OrderID'])
         else:
             # Sort by lowest price if the new order is Sell side
-            sell_sorted = self.order_book.sort_values(by = ['Price', 'CreateTime'], ascending=[True, True])
+            if self.buy_order_book.empty: # no more orders to cross against
+                self.buy_order_book.insert(new_order)
+            
+            buy_sorted = self.buy_order_book.sort_values(by = ['Price', 'CreateTime'], ascending=[True, True])
+            priority_order = buy_sorted.loc[0]
 
-        self.order_book.insert(new_order)
+            if priority_order['Price'] > new_order['Price']:
+                if priority_order['Quantity'] < new_order['Quantity']:
+                    self.execution(priority_order['Price', 'Quantity', 'OrderID'], new_order['OrderID'])
+                else:
+                    self.execution(new_order['Price', 'Quantity', 'OrderID'], priority_order['OrderID'])
+                
+
+        
         
         
